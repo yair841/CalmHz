@@ -8,42 +8,36 @@
 <style>
 body{
 margin:0;
+background:#0b0f14;
 font-family:system-ui;
-color:white;
-height:100vh;
+color:#e5e7eb;
 display:flex;
 justify-content:center;
 align-items:center;
+height:100vh;
 direction:rtl;
-overflow:hidden;
-}
-
-.bg{
-position:fixed;
-inset:0;
-background-size:cover;
-background-position:center;
-filter:blur(6px) brightness(.5);
-transition:1s;
 }
 
 .app{
-position:relative;
-z-index:2;
 width:420px;
-background:rgba(17,24,39,.75);
-backdrop-filter: blur(12px);
-border-radius:18px;
+background:#151a22;
+border-radius:16px;
 padding:18px;
-box-shadow:0 30px 80px rgba(0,0,0,.7);
+box-shadow:0 20px 60px rgba(0,0,0,.6);
 }
 
 h2{margin:0 0 10px}
 
 .card{margin-top:14px}
 
+label{
+font-size:13px;
+opacity:.7;
+}
+
 input[type=range]{
 width:100%;
+margin-top:5px;
 }
 
 .row{
@@ -57,10 +51,10 @@ flex:1;
 padding:10px;
 border:none;
 border-radius:8px;
-background:#2563eb;
-color:white;
 cursor:pointer;
 font-weight:600;
+background:#2563eb;
+color:white;
 }
 
 .stop{background:#dc2626}
@@ -69,15 +63,18 @@ font-weight:600;
 
 <body>
 
-<div class="bg" id="bg"></div>
-
 <div class="app">
 
 <h2>CalmHz</h2>
 
 <div class="card">
+<label>תדר <span id="freqLabel">120Hz</span></label>
+<input id="freq" type="range" min="20" max="1000" value="120">
+</div>
+
+<div class="card">
 🌧 גשם
-<input id="rain" type="range" min="0" max="100" value="0">
+<input id="rain" type="range" min="0" max="100" value="20">
 </div>
 
 <div class="card">
@@ -86,13 +83,13 @@ font-weight:600;
 </div>
 
 <div class="card">
-🌲 יער
-<input id="forest" type="range" min="0" max="100" value="0">
+🌬 רוח
+<input id="wind" type="range" min="0" max="100" value="0">
 </div>
 
 <div class="card">
-🌬 רוח
-<input id="wind" type="range" min="0" max="100" value="0">
+🔊 עוצמה כללית
+<input id="master" type="range" min="0" max="100" value="70">
 </div>
 
 <div class="row">
@@ -104,51 +101,147 @@ font-weight:600;
 
 <script>
 
-let sounds={}
+let ctx, masterGain, nodes=[]
 
-function load(name,url){
-sounds[name]=new Audio(url)
-sounds[name].loop=true
+freq.oninput=()=>freqLabel.innerText=freq.value+"Hz"
+
+function pinkNoise(){
+
+const buffer=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate)
+const data=buffer.getChannelData(0)
+
+let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0
+
+for(let i=0;i<data.length;i++){
+let white=Math.random()*2-1
+b0=0.99886*b0+white*0.0555179
+b1=0.99332*b1+white*0.0750759
+b2=0.96900*b2+white*0.1538520
+b3=0.86650*b3+white*0.3104856
+b4=0.55000*b4+white*0.5329522
+b5=-0.7616*b5-white*0.0168980
+data[i]=b0+b1+b2+b3+b4+b5+b6+white*0.5362
+data[i]*=0.11
+b6=white*0.115926
 }
 
-load("rain","https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3")
-load("ocean","https://cdn.pixabay.com/download/audio/2022/03/10/audio_5c3f4c4d6c.mp3")
-load("forest","https://cdn.pixabay.com/download/audio/2022/10/16/audio_9f2f1b3e.mp3")
-load("wind","https://cdn.pixabay.com/download/audio/2021/09/06/audio_4b2d.mp3")
+return buffer
+}
 
-function setBackground(){
+function rainSound(level){
 
-if(rain.value>0)
-bg.style.backgroundImage="url('https://images.unsplash.com/photo-1501696461415-6bd6660c6742?q=80&w=1600')"
+const src=ctx.createBufferSource()
+src.buffer=pinkNoise()
+src.loop=true
 
-else if(ocean.value>0)
-bg.style.backgroundImage="url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1600')"
+const hp=ctx.createBiquadFilter()
+hp.type="highpass"
+hp.frequency.value=600
 
-else if(forest.value>0)
-bg.style.backgroundImage="url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1600')"
+const gain=ctx.createGain()
+gain.gain.value=level
 
-else if(wind.value>0)
-bg.style.backgroundImage="url('https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=1600')"
+src.connect(hp)
+hp.connect(gain)
+gain.connect(masterGain)
 
+src.start()
+nodes.push(src)
+}
+
+function oceanSound(level){
+
+const src=ctx.createBufferSource()
+src.buffer=pinkNoise()
+src.loop=true
+
+const lp=ctx.createBiquadFilter()
+lp.type="lowpass"
+lp.frequency.value=300
+
+const lfo=ctx.createOscillator()
+const lfoGain=ctx.createGain()
+
+lfo.frequency.value=0.12
+lfoGain.gain.value=200
+
+lfo.connect(lfoGain)
+lfoGain.connect(lp.frequency)
+lfo.start()
+
+const gain=ctx.createGain()
+gain.gain.value=level
+
+src.connect(lp)
+lp.connect(gain)
+gain.connect(masterGain)
+
+src.start()
+nodes.push(src)
+}
+
+function windSound(level){
+
+const src=ctx.createBufferSource()
+src.buffer=pinkNoise()
+src.loop=true
+
+const bp=ctx.createBiquadFilter()
+bp.type="bandpass"
+bp.frequency.value=800
+
+const gain=ctx.createGain()
+gain.gain.value=level
+
+src.connect(bp)
+bp.connect(gain)
+gain.connect(masterGain)
+
+src.start()
+nodes.push(src)
+}
+
+function tone(){
+
+const osc=ctx.createOscillator()
+osc.type="sine"
+osc.frequency.value=freq.value
+
+const gain=ctx.createGain()
+gain.gain.value=0.15
+
+osc.connect(gain)
+gain.connect(masterGain)
+
+osc.start()
+nodes.push(osc)
 }
 
 function play(){
 
 stop()
 
-Object.keys(sounds).forEach(name=>{
-sounds[name].volume=document.getElementById(name).value/100
-if(sounds[name].volume>0) sounds[name].play()
-})
+ctx=new AudioContext()
 
-setBackground()
+masterGain=ctx.createGain()
+masterGain.gain.value=master.value/100
+masterGain.connect(ctx.destination)
+
+tone()
+
+rainSound(rain.value/200)
+oceanSound(ocean.value/200)
+windSound(wind.value/200)
+
 }
 
 function stop(){
-Object.values(sounds).forEach(a=>{
-a.pause()
-a.currentTime=0
+
+nodes.forEach(n=>{
+try{n.stop()}catch{}
 })
+
+nodes=[]
 }
 
 </script>
