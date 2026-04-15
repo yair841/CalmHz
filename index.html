@@ -1,250 +1,268 @@
 <!DOCTYPE html>
-<html lang="he">
+<html lang="he" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CalmHz Studio</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CalmHz Studio Pro</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #22c55e;
+            --danger: #ef4444;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+        }
 
-<style>
-body{
-margin:0;
-font-family:system-ui;
-background:#0b1220;
-color:white;
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-direction:rtl;
-overflow:hidden;
-}
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
 
-.bg{
-position:fixed;
-inset:0;
-background-size:cover;
-background-position:center;
-filter:blur(8px) brightness(.4);
-transition:1s;
-}
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            background-image: url('https://images.unsplash.com/photo-1501696461415-6bd6660c6742');
+            background-size: cover;
+            background-position: center;
+            filter: blur(20px) brightness(0.3);
+            transition: background-image 1.5s ease-in-out;
+            z-index: -1;
+        }
 
-.app{
-position:relative;
-z-index:2;
-width:460px;
-background:rgba(17,24,39,.75);
-backdrop-filter: blur(12px);
-border-radius:20px;
-padding:20px;
-box-shadow:0 30px 80px rgba(0,0,0,.7);
-}
+        .app-container {
+            position: relative;
+            width: 90%;
+            max-width: 420px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
 
-h2{
-margin:0 0 10px;
-}
+        h2 {
+            margin: 0 0 20px;
+            text-align: center;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-.card{
-margin-top:12px;
-}
+        .control-group {
+            margin-bottom: 20px;
+        }
 
-select,input{
-width:100%;
-}
+        label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            color: #94a3b8;
+        }
 
-.row{
-display:flex;
-gap:8px;
-margin-top:12px;
-}
+        select, input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            outline: none;
+        }
 
-button{
-flex:1;
-padding:10px;
-border:none;
-border-radius:10px;
-cursor:pointer;
-font-weight:600;
-background:#22c55e;
-color:white;
-}
+        .freq-display {
+            float: left;
+            color: var(--primary);
+            font-weight: bold;
+        }
 
-.stop{background:#ef4444}
-.youtube{background:#3b82f6}
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
 
-iframe{
-width:100%;
-height:180px;
-border-radius:12px;
-border:none;
-margin-top:10px;
-display:none;
-}
-</style>
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:active { transform: scale(0.96); }
+
+        .btn-play { background: var(--primary); color: white; grid-column: span 2; }
+        .btn-stop { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+        .btn-yt { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
+
+        #yt-container {
+            margin-top: 15px;
+            border-radius: 15px;
+            overflow: hidden;
+            display: none;
+            transition: 0.3s;
+        }
+
+        input[type=range] {
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+    </style>
 </head>
-
 <body>
 
-<div class="bg" id="bg"></div>
+<div class="bg-overlay" id="bgOverlay"></div>
 
-<div class="app">
+<div class="app-container">
+    <h2>CalmHz Studio</h2>
 
-<h2>CalmHz Studio</h2>
+    <div class="control-group">
+        <label>סוג צליל</label>
+        <select id="type">
+            <option value="sine">תדר סינוס (טהור)</option>
+            <option value="white">רעש לבן (White Noise)</option>
+            <option value="pink">רעש ורוד (Pink Noise)</option>
+            <option value="brown">רעש חום (Deep Brown)</option>
+        </select>
+    </div>
 
-<div class="card">
-סוג צליל
-<select id="type">
-<option value="sine">תדר סינוס</option>
-<option value="white">רעש לבן</option>
-<option value="pink">רעש ורוד</option>
-<option value="brown">רעש חום</option>
-</select>
-</div>
+    <div class="control-group">
+        <label>תדר <span class="freq-display" id="freqVal">440Hz</span></label>
+        <input id="freq" type="range" min="40" max="2000" value="440">
+    </div>
 
-<div class="card">
-תדר: <span id="freqVal">440Hz</span>
-<input id="freq" type="range" min="20" max="20000" value="440">
-</div>
+    <div class="control-group">
+        <label>אווירה חזותית</label>
+        <select id="bgSelect" onchange="updateScene(this.value)">
+            <option value="https://images.unsplash.com/photo-1501696461415-6bd6660c6742">גשם רגוע</option>
+            <option value="https://images.unsplash.com/photo-1507525428034-b723cf961d3e">חוף הים</option>
+            <option value="https://images.unsplash.com/photo-1441974231531-c6227db76b6e">יער עמוק</option>
+            <option value="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee">לילה זרוע כוכבים</option>
+        </select>
+    </div>
 
-<div class="card">
-רקע
-<select onchange="setBg(this.value)">
-<option value="rain">גשם</option>
-<option value="ocean">ים</option>
-<option value="forest">יער</option>
-<option value="night">לילה</option>
-</select>
-</div>
+    <div class="btn-grid">
+        <button class="btn-play" onclick="initAudio()">נגן צליל</button>
+        <button class="btn-stop" onclick="stopAudio()">עצור</button>
+        <button class="btn-yt" onclick="toggleYT()">YouTube</button>
+    </div>
 
-<div class="card">
-מצבים מוכנים
-<select onchange="preset(this.value)">
-<option>בחר</option>
-<option value="focus">Focus</option>
-<option value="sleep">Sleep</option>
-<option value="rain">Rain</option>
-<option value="deep">Deep Noise</option>
-</select>
-</div>
-
-<div class="row">
-<button onclick="play()">נגן</button>
-<button class="stop" onclick="stop()">עצור</button>
-<button class="youtube" onclick="toggleYT()">YouTube</button>
-</div>
-
-<iframe id="yt"
-src="https://www.youtube.com/embed/5qap5aO4i9A"
-allow="autoplay">
-</iframe>
-
+    <div id="yt-container">
+        <iframe width="100%" height="180" src="https://www.youtube.com/embed/5qap5aO4i9A" frameborder="0" allow="autoplay"></iframe>
+    </div>
 </div>
 
 <script>
-let ctx,source;
+    let audioCtx, oscillator, noiseSource, gainNode;
 
-freq.oninput=()=>{
-freqVal.innerText=freq.value+"Hz";
-}
+    const freqInput = document.getElementById('freq');
+    const freqVal = document.getElementById('freqVal');
+    const typeSelect = document.getElementById('type');
 
-function setBg(v){
-const bg=document.getElementById("bg");
+    freqInput.oninput = () => {
+        freqVal.innerText = freqInput.value + "Hz";
+        if (oscillator) oscillator.frequency.setTargetAtTime(freqInput.value, audioCtx.currentTime, 0.1);
+    };
 
-if(v==="rain")
-bg.style.backgroundImage="url('https://images.unsplash.com/photo-1501696461415-6bd6660c6742')";
+    function updateScene(url) {
+        document.getElementById('bgOverlay').style.backgroundImage = `url('${url}')`;
+    }
 
-if(v==="ocean")
-bg.style.backgroundImage="url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e')";
+    function createPinkNoise(buffer) {
+        let b0, b1, b2, b3, b4, b5, b6;
+        b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < buffer.length; i++) {
+            let white = Math.random() * 2 - 1;
+            b0 = 0.99886 * b0 + white * 0.0555179;
+            b1 = 0.99332 * b1 + white * 0.0750759;
+            b2 = 0.96900 * b2 + white * 0.1538520;
+            b3 = 0.86650 * b3 + white * 0.3104856;
+            b4 = 0.55000 * b4 + white * 0.5329522;
+            b5 = -0.7616 * b5 - white * 0.0168980;
+            data[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+            data[i] *= 0.11; 
+            b6 = white * 0.115926;
+        }
+    }
 
-if(v==="forest")
-bg.style.backgroundImage="url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e')";
+    function initAudio() {
+        if (audioCtx) stopAudio();
+        
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.1); // Fade in
+        
+        const type = typeSelect.value;
 
-if(v==="night")
-bg.style.backgroundImage="url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee')";
-}
+        if (type === 'sine') {
+            oscillator = audioCtx.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(freqInput.value, audioCtx.currentTime);
+            oscillator.connect(gainNode);
+            oscillator.start();
+        } else {
+            const bufferSize = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
 
-function noise(type,len){
-const buffer=ctx.createBuffer(1,len,ctx.sampleRate);
-const data=buffer.getChannelData(0);
+            if (type === 'white') {
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            } else if (type === 'pink') {
+                createPinkNoise(buffer);
+            } else if (type === 'brown') {
+                let lastOut = 0.0;
+                for (let i = 0; i < bufferSize; i++) {
+                    let white = Math.random() * 2 - 1;
+                    data[i] = (lastOut + (0.02 * white)) / 1.02;
+                    lastOut = data[i];
+                    data[i] *= 3.5; // הגברה לרעש חום
+                }
+            }
 
-let last=0;
+            noiseSource = audioCtx.createBufferSource();
+            noiseSource.buffer = buffer;
+            noiseSource.loop = true;
+            noiseSource.connect(gainNode);
+            noiseSource.start();
+        }
 
-for(let i=0;i<data.length;i++){
+        gainNode.connect(audioCtx.destination);
+    }
 
-let white=Math.random()*2-1;
+    function stopAudio() {
+        if (gainNode) {
+            gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1); // Fade out
+            setTimeout(() => {
+                if (oscillator) { oscillator.stop(); oscillator = null; }
+                if (noiseSource) { noiseSource.stop(); noiseSource = null; }
+                if (audioCtx) audioCtx.close();
+            }, 150);
+        }
+    }
 
-if(type==="white") data[i]=white;
-
-if(type==="pink"){
-data[i]=(white+last)/2;
-last=data[i];
-}
-
-if(type==="brown"){
-last=(last+(0.02*white))/1.02;
-data[i]=last;
-}
-
-}
-
-return buffer;
-}
-
-function play(){
-
-stop();
-
-ctx=new AudioContext();
-
-const type=document.getElementById("type").value;
-
-if(type==="sine"){
-source=ctx.createOscillator();
-source.frequency.value=freq.value;
-source.connect(ctx.destination);
-source.start();
-return;
-}
-
-const buffer=noise(type,ctx.sampleRate*5);
-
-source=ctx.createBufferSource();
-source.buffer=buffer;
-source.loop=true;
-source.connect(ctx.destination);
-source.start();
-}
-
-function stop(){
-try{source.stop()}catch{}
-}
-
-function preset(p){
-
-if(p==="focus"){
-type.value="sine";
-freq.value=432;
-}
-
-if(p==="sleep"){
-type.value="brown";
-}
-
-if(p==="rain"){
-type.value="pink";
-}
-
-if(p==="deep"){
-type.value="white";
-freq.value=120;
-}
-
-freq.oninput();
-}
-
-function toggleYT(){
-const y=document.getElementById("yt");
-y.style.display=y.style.display==="none"?"block":"none";
-}
+    function toggleYT() {
+        const container = document.getElementById('yt-container');
+        container.style.display = container.style.display === 'block' ? 'none' : 'block';
+    }
 </script>
 
 </body>
