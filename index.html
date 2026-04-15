@@ -2,38 +2,61 @@
 <html lang="he">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CalmHz</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CalmHz Studio</title>
+
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 
 <style>
 body{
-background:#0f172a;
-font-family:system-ui;
-color:white;
+margin:0;
+height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
-height:100vh;
-margin:0;
+font-family:system-ui;
+color:white;
 direction:rtl;
+overflow:hidden;
+background:#050814;
+}
+
+.bg{
+position:absolute;
+inset:0;
+background: radial-gradient(circle at 20% 20%, #22c55e33, transparent 40%),
+            radial-gradient(circle at 80% 60%, #3b82f633, transparent 40%),
+            radial-gradient(circle at 50% 90%, #a855f733, transparent 40%);
+animation:move 8s infinite alternate;
+filter:blur(40px);
+}
+
+@keyframes move{
+0%{transform:scale(1) rotate(0deg)}
+100%{transform:scale(1.2) rotate(10deg)}
 }
 
 .app{
-width:380px;
-background:#111827;
-border-radius:20px;
+width:430px;
+background:rgba(17,24,39,0.75);
+backdrop-filter: blur(20px);
+border-radius:22px;
 padding:20px;
-box-shadow:0 25px 60px rgba(0,0,0,.6);
+z-index:2;
+border:1px solid rgba(255,255,255,0.08);
+box-shadow:0 30px 90px rgba(0,0,0,0.7);
 }
 
+h2{margin:0 0 10px}
+
 .card{
-background:#0b1220;
-padding:12px;
+background:rgba(0,0,0,0.25);
+padding:10px;
 border-radius:12px;
 margin-top:10px;
 }
 
-select,input[type=range]{width:100%}
+select,input{width:100%}
 
 .row{display:flex;gap:8px;margin-top:10px}
 
@@ -43,37 +66,44 @@ padding:10px;
 border:none;
 border-radius:10px;
 cursor:pointer;
-font-weight:600;
+font-weight:700;
+transition:0.2s;
 }
+
+button:hover{transform:scale(1.05)}
 
 .play{background:#22c55e}
 .stop{background:#ef4444}
-.download{background:#3b82f6}
+.mp3{background:#3b82f6}
 
-.progress{
-height:6px;
-background:#1f2937;
-border-radius:999px;
-margin-top:10px;
-overflow:hidden;
+.presets button{
+margin-top:5px;
+width:100%;
+background:#111827;
+border:1px solid rgba(255,255,255,0.1);
 }
 
-.bar{
-height:100%;
-width:0%;
-background:#22c55e;
+canvas{
+width:100%;
+height:90px;
+background:black;
+border-radius:10px;
+margin-top:10px;
 }
 </style>
 </head>
 
 <body>
 
+<div class="bg"></div>
+
 <div class="app">
-<h2>CalmHz</h2>
+
+<h2>🎧 CalmHz Studio</h2>
 
 <div class="card">
 סוג צליל
-<select id="type">
+<select id="type" onchange="updateUI()">
 <option value="sine">סינוס</option>
 <option value="white">רעש לבן</option>
 <option value="pink">רעש ורוד</option>
@@ -82,43 +112,81 @@ background:#22c55e;
 </div>
 
 <div class="card">
-תדר (לסינוס בלבד)
-<input id="freq" type="range" min="20" max="2000" value="100">
+תדר
+<input id="freq" type="range" min="20" max="2000" value="120">
 </div>
 
 <div class="card">
-משך
-<input id="duration" type="range" min="5" max="300" value="60">
+משך (שניות)
+<input id="dur" type="range" min="5" max="120" value="30">
+</div>
+
+<div class="card presets">
+<b>🎛 Presets</b>
+<button onclick="setPreset('focus')">Focus 🧠</button>
+<button onclick="setPreset('sleep')">Sleep 😴</button>
+<button onclick="setPreset('calm')">Calm 🌿</button>
 </div>
 
 <div class="row">
-<button class="play" onclick="play()">נגן</button>
-<button class="stop" onclick="stop()">עצור</button>
-<button class="download" onclick="download()">הורד</button>
+<button class="play" onclick="play()">▶ נגן</button>
+<button class="stop" onclick="stop()">■ עצור</button>
+<button class="mp3" onclick="exportMP3()">⬇ MP3</button>
 </div>
 
-<div class="progress"><div class="bar" id="bar"></div></div>
+<canvas id="viz"></canvas>
 
 </div>
 
 <script>
-let ctx,source,start;
+let ctx, osc, source, analyser, dataArray;
+
+const canvas=document.getElementById("viz");
+const c=canvas.getContext("2d");
+
+function updateUI(){
+document.getElementById("freq").disabled =
+document.getElementById("type").value !== "sine";
+}
+
+function setPreset(p){
+if(p==="focus"){
+document.getElementById("type").value="sine";
+document.getElementById("freq").value=220;
+}
+if(p==="sleep"){
+document.getElementById("type").value="brown";
+document.getElementById("dur").value=60;
+}
+if(p==="calm"){
+document.getElementById("type").value="pink";
+document.getElementById("freq").value=100;
+}
+updateUI();
+}
 
 function play(){
 stop();
+
 ctx=new AudioContext();
 
 const type=document.getElementById("type").value;
-const freq=document.getElementById("freq").value;
-const dur=document.getElementById("duration").value;
+const freq=+document.getElementById("freq").value;
+const dur=+document.getElementById("dur").value;
+
+analyser=ctx.createAnalyser();
+analyser.fftSize=256;
 
 if(type==="sine"){
-source=ctx.createOscillator();
-source.frequency.value=freq;
-source.type="sine";
-source.connect(ctx.destination);
-source.start();
-}else{
+osc=ctx.createOscillator();
+osc.frequency.value=freq;
+osc.type="sine";
+osc.connect(analyser);
+analyser.connect(ctx.destination);
+osc.start();
+}
+
+else{
 const buffer=ctx.createBuffer(1,ctx.sampleRate*dur,ctx.sampleRate);
 const data=buffer.getChannelData(0);
 
@@ -127,61 +195,120 @@ for(let i=0;i<data.length;i++) data[i]=Math.random()*2-1;
 }
 
 if(type==="pink"){
-let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+let b0=0,b1=0,b2=0,b3=0;
 for(let i=0;i<data.length;i++){
-let white=Math.random()*2-1;
-b0=0.99886*b0+white*0.0555179;
-b1=0.99332*b1+white*0.0750759;
-b2=0.96900*b2+white*0.1538520;
-b3=0.86650*b3+white*0.3104856;
-b4=0.55000*b4+white*0.5329522;
-b5=-0.7616*b5-white*0.0168980;
-data[i]=b0+b1+b2+b3+b4+b5+b6+white*0.5362;
-data[i]*=0.11;
-b6=white*0.115926;
+let w=Math.random()*2-1;
+b0=0.99*b0+w*0.05;
+b1=0.98*b1+w*0.07;
+b2=0.96*b2+w*0.1;
+b3=0.9*b3+w*0.2;
+data[i]=(b0+b1+b2+b3)/4;
 }
 }
 
 if(type==="brown"){
 let last=0;
 for(let i=0;i<data.length;i++){
-let white=Math.random()*2-1;
-data[i]=(last+(0.02*white))/1.02;
-last=data[i];
-data[i]*=3.5;
+last=(last+(Math.random()*2-1)*0.02)/1.02;
+data[i]=last;
 }
 }
 
 source=ctx.createBufferSource();
 source.buffer=buffer;
-source.connect(ctx.destination);
+source.connect(analyser);
+analyser.connect(ctx.destination);
 source.start();
 }
 
-start=Date.now();
-animate();
-
+visualize();
 setTimeout(stop,dur*1000);
 }
 
 function stop(){
-if(source){
-try{source.stop()}catch{}
-source=null;
-}
-bar.style.width="0%";
+try{osc?.stop()}catch{}
+try{source?.stop()}catch{}
+osc=null;source=null;
 }
 
-function animate(){
-if(!source) return;
-let dur=document.getElementById("duration").value;
-let p=(Date.now()-start)/(dur*1000)*100;
-bar.style.width=Math.min(p,100)+"%";
-requestAnimationFrame(animate);
+function visualize(){
+requestAnimationFrame(visualize);
+if(!analyser) return;
+
+const bufferLength=analyser.frequencyBinCount;
+dataArray=new Uint8Array(bufferLength);
+analyser.getByteFrequencyData(dataArray);
+
+c.clearRect(0,0,canvas.width,canvas.height);
+
+for(let i=0;i<bufferLength;i++){
+let h=dataArray[i]/2;
+let x=i*(canvas.width/bufferLength);
+c.fillStyle="#22c55e";
+c.fillRect(x,80-h,2,h);
+}
 }
 
-function download(){
-alert("הורדה זמינה בגרסה הבאה (MP3 דורש קידוד)");
+async function exportMP3(){
+
+const dur=+document.getElementById("dur").value;
+const type=document.getElementById("type").value;
+const sr=44100;
+
+const offline=new OfflineAudioContext(1,sr*dur,sr);
+
+let src;
+
+if(type==="sine"){
+src=offline.createOscillator();
+src.frequency.value=+document.getElementById("freq").value;
+src.connect(offline.destination);
+src.start();
+src.stop(dur);
+}
+else{
+const buffer=offline.createBuffer(1,sr*dur,sr);
+const data=buffer.getChannelData(0);
+
+for(let i=0;i<data.length;i++){
+if(type==="white") data[i]=Math.random()*2-1;
+if(type==="pink") data[i]=(Math.random()*2-1)*0.5;
+if(type==="brown") data[i]=(Math.random()*2-1)*0.3;
+}
+
+src=offline.createBufferSource();
+src.buffer=buffer;
+src.connect(offline.destination);
+src.start();
+}
+
+const rendered=await offline.startRendering();
+
+const samples=new Int16Array(rendered.length);
+const ch=rendered.getChannelData(0);
+
+for(let i=0;i<ch.length;i++){
+samples[i]=Math.max(-1,Math.min(1,ch[i]))*32767;
+}
+
+const enc=new lamejs.Mp3Encoder(1,sr,128);
+let mp3=[];
+
+for(let i=0;i<samples.length;i+=1152){
+let chunk=samples.subarray(i,i+1152);
+let buf=enc.encodeBuffer(chunk);
+if(buf.length) mp3.push(buf);
+}
+
+mp3.push(enc.flush());
+
+const blob=new Blob(mp3,{type:"audio/mp3"});
+const url=URL.createObjectURL(blob);
+
+const a=document.createElement("a");
+a.href=url;
+a.download="calmhz.mp3";
+a.click();
 }
 </script>
 
