@@ -5,284 +5,152 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CalmHz</title>
 
-<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
-
 <style>
 body{
 margin:0;
 font-family:system-ui;
-background:#0b1220;
 color:white;
+height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
-height:100vh;
 direction:rtl;
+overflow:hidden;
+}
+
+.bg{
+position:fixed;
+inset:0;
+background-size:cover;
+background-position:center;
+filter:blur(6px) brightness(.5);
+transition:1s;
 }
 
 .app{
+position:relative;
+z-index:2;
 width:420px;
-background:#111827;
+background:rgba(17,24,39,.75);
+backdrop-filter: blur(12px);
 border-radius:18px;
 padding:18px;
-box-shadow:0 20px 60px rgba(0,0,0,.6);
+box-shadow:0 30px 80px rgba(0,0,0,.7);
 }
 
-h2{
-margin:0 0 10px;
-font-size:20px;
-}
+h2{margin:0 0 10px}
 
-.card{
-background:#0f172a;
-padding:12px;
-border-radius:12px;
-margin-top:10px;
-}
+.card{margin-top:14px}
 
-label{
-font-size:13px;
-opacity:.8;
-}
-
-input,select{
+input[type=range]{
 width:100%;
-margin-top:5px;
 }
 
 .row{
 display:flex;
 gap:8px;
-margin-top:12px;
+margin-top:14px;
 }
 
 button{
 flex:1;
 padding:10px;
 border:none;
-border-radius:10px;
+border-radius:8px;
+background:#2563eb;
+color:white;
 cursor:pointer;
 font-weight:600;
 }
 
-.play{background:#22c55e}
-.stop{background:#ef4444}
-.mp3{background:#3b82f6}
-
-canvas{
-width:100%;
-height:70px;
-background:black;
-border-radius:10px;
-margin-top:10px;
-}
+.stop{background:#dc2626}
 </style>
 </head>
 
 <body>
+
+<div class="bg" id="bg"></div>
 
 <div class="app">
 
 <h2>CalmHz</h2>
 
 <div class="card">
-צליל בסיס
-<select id="base">
-<option value="none">ללא</option>
-<option value="sine">תדר סינוס</option>
-<option value="white">רעש לבן</option>
-<option value="pink">רעש ורוד</option>
-</select>
-</div>
-
-<div class="card">
-<label>תדר <span id="freqVal">120Hz</span></label>
-<input id="freq" type="range" min="20" max="2000" value="120">
-</div>
-
-<div class="card">
-🌧️ גשם
+🌧 גשם
 <input id="rain" type="range" min="0" max="100" value="0">
 </div>
 
 <div class="card">
-🌊 גלים
-<input id="waves" type="range" min="0" max="100" value="0">
+🌊 ים
+<input id="ocean" type="range" min="0" max="100" value="0">
 </div>
 
 <div class="card">
-🌬️ רוח
+🌲 יער
+<input id="forest" type="range" min="0" max="100" value="0">
+</div>
+
+<div class="card">
+🌬 רוח
 <input id="wind" type="range" min="0" max="100" value="0">
 </div>
 
 <div class="row">
-<button class="play" onclick="play()">נגן</button>
+<button onclick="play()">נגן</button>
 <button class="stop" onclick="stop()">עצור</button>
-<button class="mp3" onclick="exportMP3()">MP3</button>
 </div>
-
-<canvas id="viz"></canvas>
 
 </div>
 
 <script>
 
-let ctx, analyser, sources=[];
+let sounds={}
 
-freq.oninput=()=>freqVal.innerText=freq.value+"Hz";
-
-function noiseBuffer(type,len){
-const buffer=ctx.createBuffer(1,len,ctx.sampleRate);
-const data=buffer.getChannelData(0);
-
-let last=0;
-
-for(let i=0;i<len;i++){
-
-let white=Math.random()*2-1;
-
-if(type==="white") data[i]=white;
-
-if(type==="pink"){
-data[i]=(white+last)/2;
-last=data[i];
+function load(name,url){
+sounds[name]=new Audio(url)
+sounds[name].loop=true
 }
 
-if(type==="brown"){
-last=(last+(0.02*white))/1.02;
-data[i]=last*3;
-}
+load("rain","https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3")
+load("ocean","https://cdn.pixabay.com/download/audio/2022/03/10/audio_5c3f4c4d6c.mp3")
+load("forest","https://cdn.pixabay.com/download/audio/2022/10/16/audio_9f2f1b3e.mp3")
+load("wind","https://cdn.pixabay.com/download/audio/2021/09/06/audio_4b2d.mp3")
 
-}
+function setBackground(){
 
-return buffer;
+if(rain.value>0)
+bg.style.backgroundImage="url('https://images.unsplash.com/photo-1501696461415-6bd6660c6742?q=80&w=1600')"
+
+else if(ocean.value>0)
+bg.style.backgroundImage="url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1600')"
+
+else if(forest.value>0)
+bg.style.backgroundImage="url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1600')"
+
+else if(wind.value>0)
+bg.style.backgroundImage="url('https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=1600')"
+
 }
 
 function play(){
 
-stop();
+stop()
 
-ctx=new AudioContext();
-analyser=ctx.createAnalyser();
+Object.keys(sounds).forEach(name=>{
+sounds[name].volume=document.getElementById(name).value/100
+if(sounds[name].volume>0) sounds[name].play()
+})
 
-const dur=ctx.sampleRate*60;
-
-const baseType=base.value;
-
-if(baseType==="sine"){
-const osc=ctx.createOscillator();
-osc.frequency.value=freq.value;
-osc.connect(analyser);
-osc.start();
-sources.push(osc);
-}
-
-if(baseType==="white"||baseType==="pink"){
-const src=ctx.createBufferSource();
-src.buffer=noiseBuffer(baseType,dur);
-src.loop=true;
-src.connect(analyser);
-src.start();
-sources.push(src);
-}
-
-// rain
-if(rain.value>0){
-const gain=ctx.createGain();
-gain.gain.value=rain.value/200;
-
-const src=ctx.createBufferSource();
-src.buffer=noiseBuffer("pink",dur);
-src.loop=true;
-
-const filter=ctx.createBiquadFilter();
-filter.type="highpass";
-filter.frequency.value=500;
-
-src.connect(filter);
-filter.connect(gain);
-gain.connect(analyser);
-
-src.start();
-sources.push(src);
-}
-
-// waves
-if(waves.value>0){
-const gain=ctx.createGain();
-gain.gain.value=waves.value/200;
-
-const src=ctx.createBufferSource();
-src.buffer=noiseBuffer("brown",dur);
-src.loop=true;
-
-const filter=ctx.createBiquadFilter();
-filter.type="lowpass";
-filter.frequency.value=300;
-
-src.connect(filter);
-filter.connect(gain);
-gain.connect(analyser);
-
-src.start();
-sources.push(src);
-}
-
-// wind
-if(wind.value>0){
-const gain=ctx.createGain();
-gain.gain.value=wind.value/200;
-
-const src=ctx.createBufferSource();
-src.buffer=noiseBuffer("white",dur);
-src.loop=true;
-
-const filter=ctx.createBiquadFilter();
-filter.type="bandpass";
-filter.frequency.value=800;
-
-src.connect(filter);
-filter.connect(gain);
-gain.connect(analyser);
-
-src.start();
-sources.push(src);
-}
-
-analyser.connect(ctx.destination);
-visualize();
+setBackground()
 }
 
 function stop(){
-sources.forEach(s=>{try{s.stop()}catch{}});
-sources=[];
+Object.values(sounds).forEach(a=>{
+a.pause()
+a.currentTime=0
+})
 }
 
-function visualize(){
-
-requestAnimationFrame(visualize);
-if(!analyser) return;
-
-const canvas=viz;
-const c=canvas.getContext("2d");
-
-const data=new Uint8Array(analyser.frequencyBinCount);
-analyser.getByteFrequencyData(data);
-
-c.clearRect(0,0,canvas.width,canvas.height);
-
-for(let i=0;i<data.length;i++){
-let h=data[i]/2;
-c.fillStyle="#22c55e";
-c.fillRect(i*2,70-h,2,h);
-}
-}
-
-async function exportMP3(){
-
-alert("ייצוא MP3 יעבוד לאחר ניגון הצליל");
-
-}
 </script>
 
 </body>
