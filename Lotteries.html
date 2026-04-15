@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CalmHz</title>
+
+<style>
+body{
+background:#0f172a;
+font-family:system-ui;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+margin:0;
+direction:rtl;
+}
+
+.app{
+width:380px;
+background:#111827;
+border-radius:20px;
+padding:20px;
+box-shadow:0 25px 60px rgba(0,0,0,.6);
+}
+
+.card{
+background:#0b1220;
+padding:12px;
+border-radius:12px;
+margin-top:10px;
+}
+
+select,input[type=range]{width:100%}
+
+.row{display:flex;gap:8px;margin-top:10px}
+
+button{
+flex:1;
+padding:10px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+font-weight:600;
+}
+
+.play{background:#22c55e}
+.stop{background:#ef4444}
+.download{background:#3b82f6}
+
+.progress{
+height:6px;
+background:#1f2937;
+border-radius:999px;
+margin-top:10px;
+overflow:hidden;
+}
+
+.bar{
+height:100%;
+width:0%;
+background:#22c55e;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+<h2>CalmHz</h2>
+
+<div class="card">
+סוג צליל
+<select id="type">
+<option value="sine">סינוס</option>
+<option value="white">רעש לבן</option>
+<option value="pink">רעש ורוד</option>
+<option value="brown">רעש חום</option>
+</select>
+</div>
+
+<div class="card">
+תדר (לסינוס בלבד)
+<input id="freq" type="range" min="20" max="2000" value="100">
+</div>
+
+<div class="card">
+משך
+<input id="duration" type="range" min="5" max="300" value="60">
+</div>
+
+<div class="row">
+<button class="play" onclick="play()">נגן</button>
+<button class="stop" onclick="stop()">עצור</button>
+<button class="download" onclick="download()">הורד</button>
+</div>
+
+<div class="progress"><div class="bar" id="bar"></div></div>
+
+</div>
+
+<script>
+let ctx,source,start;
+
+function play(){
+stop();
+ctx=new AudioContext();
+
+const type=document.getElementById("type").value;
+const freq=document.getElementById("freq").value;
+const dur=document.getElementById("duration").value;
+
+if(type==="sine"){
+source=ctx.createOscillator();
+source.frequency.value=freq;
+source.type="sine";
+source.connect(ctx.destination);
+source.start();
+}else{
+const buffer=ctx.createBuffer(1,ctx.sampleRate*dur,ctx.sampleRate);
+const data=buffer.getChannelData(0);
+
+if(type==="white"){
+for(let i=0;i<data.length;i++) data[i]=Math.random()*2-1;
+}
+
+if(type==="pink"){
+let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+for(let i=0;i<data.length;i++){
+let white=Math.random()*2-1;
+b0=0.99886*b0+white*0.0555179;
+b1=0.99332*b1+white*0.0750759;
+b2=0.96900*b2+white*0.1538520;
+b3=0.86650*b3+white*0.3104856;
+b4=0.55000*b4+white*0.5329522;
+b5=-0.7616*b5-white*0.0168980;
+data[i]=b0+b1+b2+b3+b4+b5+b6+white*0.5362;
+data[i]*=0.11;
+b6=white*0.115926;
+}
+}
+
+if(type==="brown"){
+let last=0;
+for(let i=0;i<data.length;i++){
+let white=Math.random()*2-1;
+data[i]=(last+(0.02*white))/1.02;
+last=data[i];
+data[i]*=3.5;
+}
+}
+
+source=ctx.createBufferSource();
+source.buffer=buffer;
+source.connect(ctx.destination);
+source.start();
+}
+
+start=Date.now();
+animate();
+
+setTimeout(stop,dur*1000);
+}
+
+function stop(){
+if(source){
+try{source.stop()}catch{}
+source=null;
+}
+bar.style.width="0%";
+}
+
+function animate(){
+if(!source) return;
+let dur=document.getElementById("duration").value;
+let p=(Date.now()-start)/(dur*1000)*100;
+bar.style.width=Math.min(p,100)+"%";
+requestAnimationFrame(animate);
+}
+
+function download(){
+alert("הורדה זמינה בגרסה הבאה (MP3 דורש קידוד)");
+}
+</script>
+
+</body>
+</html>
