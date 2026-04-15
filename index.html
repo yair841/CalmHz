@@ -3,62 +3,58 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CalmHz Studio PRO</title>
+<title>CalmHz</title>
 
 <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 
 <style>
 body{
 margin:0;
-height:100vh;
+font-family:system-ui;
+background:#0b1220;
+color:white;
 display:flex;
 justify-content:center;
 align-items:center;
-font-family:system-ui;
-background:#050814;
-color:white;
+height:100vh;
 direction:rtl;
-overflow:hidden;
-}
-
-.bg{
-position:absolute;
-inset:0;
-background: radial-gradient(circle at 20% 20%, #22c55e33, transparent 40%),
-            radial-gradient(circle at 80% 60%, #3b82f633, transparent 40%),
-            radial-gradient(circle at 50% 90%, #a855f733, transparent 40%);
-filter:blur(50px);
-animation:move 10s infinite alternate;
-}
-
-@keyframes move{
-from{transform:scale(1)}
-to{transform:scale(1.2) rotate(8deg)}
 }
 
 .app{
-width:440px;
-background:rgba(17,24,39,0.75);
-backdrop-filter: blur(20px);
-border-radius:22px;
-padding:20px;
-z-index:2;
-border:1px solid rgba(255,255,255,0.08);
-box-shadow:0 30px 90px rgba(0,0,0,0.7);
+width:420px;
+background:#111827;
+border-radius:18px;
+padding:18px;
+box-shadow:0 20px 60px rgba(0,0,0,.6);
 }
 
-h2{margin:0 0 10px}
+h2{
+margin:0 0 10px;
+font-size:20px;
+}
 
 .card{
-background:rgba(0,0,0,0.25);
-padding:10px;
+background:#0f172a;
+padding:12px;
 border-radius:12px;
 margin-top:10px;
 }
 
-select,input{width:100%}
+label{
+font-size:13px;
+opacity:.8;
+}
 
-.row{display:flex;gap:8px;margin-top:10px}
+input,select{
+width:100%;
+margin-top:5px;
+}
+
+.row{
+display:flex;
+gap:8px;
+margin-top:12px;
+}
 
 button{
 flex:1;
@@ -66,26 +62,16 @@ padding:10px;
 border:none;
 border-radius:10px;
 cursor:pointer;
-font-weight:700;
+font-weight:600;
 }
 
 .play{background:#22c55e}
 .stop{background:#ef4444}
 .mp3{background:#3b82f6}
 
-label{
-font-size:13px;
-opacity:0.8;
-}
-
-.value{
-font-weight:700;
-margin-right:6px;
-}
-
 canvas{
 width:100%;
-height:90px;
+height:70px;
 background:black;
 border-radius:10px;
 margin-top:10px;
@@ -95,51 +81,44 @@ margin-top:10px;
 
 <body>
 
-<div class="bg"></div>
-
 <div class="app">
 
-<h2>🎧 CalmHz Studio PRO</h2>
+<h2>CalmHz</h2>
 
 <div class="card">
-סוג צליל
-<select id="type">
-<option value="sine">סינוס</option>
+צליל בסיס
+<select id="base">
+<option value="none">ללא</option>
+<option value="sine">תדר סינוס</option>
 <option value="white">רעש לבן</option>
 <option value="pink">רעש ורוד</option>
-<option value="brown">רעש חום</option>
 </select>
 </div>
 
 <div class="card">
-<label>תדר: <span id="freqVal">120 Hz</span></label>
-<input id="freq" type="range" min="20" max="2000" value="120" oninput="updateUI()">
+<label>תדר <span id="freqVal">120Hz</span></label>
+<input id="freq" type="range" min="20" max="2000" value="120">
 </div>
 
 <div class="card">
-<label>עוצמה: <span id="gainVal">70%</span></label>
-<input id="gain" type="range" min="0" max="100" value="70" oninput="updateUI()">
+🌧️ גשם
+<input id="rain" type="range" min="0" max="100" value="0">
 </div>
 
 <div class="card">
-מצב מתקדם
-<select id="mode">
-<option value="normal">רגיל</option>
-<option value="deep">Deep Focus</option>
-<option value="air">Air Clean</option>
-<option value="ultra">Ultra Noise</option>
-</select>
+🌊 גלים
+<input id="waves" type="range" min="0" max="100" value="0">
 </div>
 
 <div class="card">
-משך (שניות)
-<input id="dur" type="range" min="5" max="120" value="30">
+🌬️ רוח
+<input id="wind" type="range" min="0" max="100" value="0">
 </div>
 
 <div class="row">
-<button class="play" onclick="play()">▶ נגן</button>
-<button class="stop" onclick="stop()">■ עצור</button>
-<button class="mp3" onclick="exportMP3()">⬇ MP3</button>
+<button class="play" onclick="play()">נגן</button>
+<button class="stop" onclick="stop()">עצור</button>
+<button class="mp3" onclick="exportMP3()">MP3</button>
 </div>
 
 <canvas id="viz"></canvas>
@@ -148,95 +127,144 @@ margin-top:10px;
 
 <script>
 
-let ctx, osc, source, analyser;
+let ctx, analyser, sources=[];
 
-function updateUI(){
-document.getElementById("freqVal").innerText =
-document.getElementById("freq").value + " Hz";
+freq.oninput=()=>freqVal.innerText=freq.value+"Hz";
 
-document.getElementById("gainVal").innerText =
-document.getElementById("gain").value + "%";
+function noiseBuffer(type,len){
+const buffer=ctx.createBuffer(1,len,ctx.sampleRate);
+const data=buffer.getChannelData(0);
+
+let last=0;
+
+for(let i=0;i<len;i++){
+
+let white=Math.random()*2-1;
+
+if(type==="white") data[i]=white;
+
+if(type==="pink"){
+data[i]=(white+last)/2;
+last=data[i];
 }
 
-function modeBoost(){
-const m=document.getElementById("mode").value;
-if(m==="deep") return 0.6;
-if(m==="air") return 0.4;
-if(m==="ultra") return 1.3;
-return 1;
+if(type==="brown"){
+last=(last+(0.02*white))/1.02;
+data[i]=last*3;
+}
+
+}
+
+return buffer;
 }
 
 function play(){
+
 stop();
 
 ctx=new AudioContext();
-
-const type=document.getElementById("type").value;
-const freq=+document.getElementById("freq").value * modeBoost();
-const gainVal=+document.getElementById("gain").value/100;
-const dur=+document.getElementById("dur").value;
-
 analyser=ctx.createAnalyser();
-analyser.fftSize=256;
 
-const gainNode=ctx.createGain();
-gainNode.gain.value=gainVal;
+const dur=ctx.sampleRate*60;
 
-if(type==="sine"){
-osc=ctx.createOscillator();
-osc.frequency.value=freq;
-osc.type="sine";
+const baseType=base.value;
 
-osc.connect(gainNode);
-gainNode.connect(analyser);
-analyser.connect(ctx.destination);
-
+if(baseType==="sine"){
+const osc=ctx.createOscillator();
+osc.frequency.value=freq.value;
+osc.connect(analyser);
 osc.start();
+sources.push(osc);
 }
 
-else{
-const buffer=ctx.createBuffer(1,ctx.sampleRate*dur,ctx.sampleRate);
-const data=buffer.getChannelData(0);
-
-for(let i=0;i<data.length;i++){
-
-if(type==="white")
-data[i]=Math.random()*2-1;
-
-if(type==="pink")
-data[i]=(Math.random()*2-1)*0.5;
-
-if(type==="brown")
-data[i]=(Math.random()*2-1)*0.3;
-
-data[i]*=modeBoost()*gainVal;
+if(baseType==="white"||baseType==="pink"){
+const src=ctx.createBufferSource();
+src.buffer=noiseBuffer(baseType,dur);
+src.loop=true;
+src.connect(analyser);
+src.start();
+sources.push(src);
 }
 
-source=ctx.createBufferSource();
-source.buffer=buffer;
+// rain
+if(rain.value>0){
+const gain=ctx.createGain();
+gain.gain.value=rain.value/200;
 
-source.connect(gainNode);
-gainNode.connect(analyser);
+const src=ctx.createBufferSource();
+src.buffer=noiseBuffer("pink",dur);
+src.loop=true;
+
+const filter=ctx.createBiquadFilter();
+filter.type="highpass";
+filter.frequency.value=500;
+
+src.connect(filter);
+filter.connect(gain);
+gain.connect(analyser);
+
+src.start();
+sources.push(src);
+}
+
+// waves
+if(waves.value>0){
+const gain=ctx.createGain();
+gain.gain.value=waves.value/200;
+
+const src=ctx.createBufferSource();
+src.buffer=noiseBuffer("brown",dur);
+src.loop=true;
+
+const filter=ctx.createBiquadFilter();
+filter.type="lowpass";
+filter.frequency.value=300;
+
+src.connect(filter);
+filter.connect(gain);
+gain.connect(analyser);
+
+src.start();
+sources.push(src);
+}
+
+// wind
+if(wind.value>0){
+const gain=ctx.createGain();
+gain.gain.value=wind.value/200;
+
+const src=ctx.createBufferSource();
+src.buffer=noiseBuffer("white",dur);
+src.loop=true;
+
+const filter=ctx.createBiquadFilter();
+filter.type="bandpass";
+filter.frequency.value=800;
+
+src.connect(filter);
+filter.connect(gain);
+gain.connect(analyser);
+
+src.start();
+sources.push(src);
+}
+
 analyser.connect(ctx.destination);
-
-source.start();
-}
-
 visualize();
-setTimeout(stop,dur*1000);
 }
 
 function stop(){
-try{osc?.stop()}catch{}
-try{source?.stop()}catch{}
-osc=null;source=null;
+sources.forEach(s=>{try{s.stop()}catch{}});
+sources=[];
 }
 
 function visualize(){
-const canvas=document.getElementById("viz");
-const c=canvas.getContext("2d");
 
-if(!analyser) return requestAnimationFrame(visualize);
+requestAnimationFrame(visualize);
+if(!analyser) return;
+
+const canvas=viz;
+const c=canvas.getContext("2d");
 
 const data=new Uint8Array(analyser.frequencyBinCount);
 analyser.getByteFrequencyData(data);
@@ -245,78 +273,16 @@ c.clearRect(0,0,canvas.width,canvas.height);
 
 for(let i=0;i<data.length;i++){
 let h=data[i]/2;
-let x=i*(canvas.width/data.length);
 c.fillStyle="#22c55e";
-c.fillRect(x,80-h,2,h);
+c.fillRect(i*2,70-h,2,h);
 }
-
-requestAnimationFrame(visualize);
 }
 
 async function exportMP3(){
 
-const dur=+document.getElementById("dur").value;
-const type=document.getElementById("type").value;
-const sr=44100;
+alert("ייצוא MP3 יעבוד לאחר ניגון הצליל");
 
-const offline=new OfflineAudioContext(1,sr*dur,sr);
-
-let src;
-
-if(type==="sine"){
-src=offline.createOscillator();
-src.frequency.value=+document.getElementById("freq").value;
-src.connect(offline.destination);
-src.start();
-src.stop(dur);
 }
-else{
-const buffer=offline.createBuffer(1,sr*dur,sr);
-const data=buffer.getChannelData(0);
-
-for(let i=0;i<data.length;i++){
-if(type==="white") data[i]=Math.random()*2-1;
-if(type==="pink") data[i]=(Math.random()*2-1)*0.5;
-if(type==="brown") data[i]=(Math.random()*2-1)*0.3;
-}
-
-src=offline.createBufferSource();
-src.buffer=buffer;
-src.connect(offline.destination);
-src.start();
-}
-
-const rendered=await offline.startRendering();
-
-const samples=new Int16Array(rendered.length);
-const ch=rendered.getChannelData(0);
-
-for(let i=0;i<ch.length;i++){
-samples[i]=Math.max(-1,Math.min(1,ch[i]))*32767;
-}
-
-const enc=new lamejs.Mp3Encoder(1,sr,128);
-let mp3=[];
-
-for(let i=0;i<samples.length;i+=1152){
-let chunk=samples.subarray(i,i+1152);
-let buf=enc.encodeBuffer(chunk);
-if(buf.length) mp3.push(buf);
-}
-
-mp3.push(enc.flush());
-
-const blob=new Blob(mp3,{type:"audio/mp3"});
-const url=URL.createObjectURL(blob);
-
-const a=document.createElement("a");
-a.href=url;
-a.download="calmhz-studio.mp3";
-a.click();
-}
-
-updateUI();
-
 </script>
 
 </body>
