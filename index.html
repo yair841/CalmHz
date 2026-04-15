@@ -3,247 +3,248 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CalmHz</title>
+<title>CalmHz Studio</title>
 
 <style>
 body{
 margin:0;
-background:#0b0f14;
 font-family:system-ui;
-color:#e5e7eb;
+background:#0b1220;
+color:white;
+height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
-height:100vh;
 direction:rtl;
+overflow:hidden;
+}
+
+.bg{
+position:fixed;
+inset:0;
+background-size:cover;
+background-position:center;
+filter:blur(8px) brightness(.4);
+transition:1s;
 }
 
 .app{
-width:420px;
-background:#151a22;
-border-radius:16px;
-padding:18px;
-box-shadow:0 20px 60px rgba(0,0,0,.6);
+position:relative;
+z-index:2;
+width:460px;
+background:rgba(17,24,39,.75);
+backdrop-filter: blur(12px);
+border-radius:20px;
+padding:20px;
+box-shadow:0 30px 80px rgba(0,0,0,.7);
 }
 
-h2{margin:0 0 10px}
-
-.card{margin-top:14px}
-
-label{
-font-size:13px;
-opacity:.7;
+h2{
+margin:0 0 10px;
 }
 
-input[type=range]{
+.card{
+margin-top:12px;
+}
+
+select,input{
 width:100%;
-margin-top:5px;
 }
 
 .row{
 display:flex;
 gap:8px;
-margin-top:14px;
+margin-top:12px;
 }
 
 button{
 flex:1;
 padding:10px;
 border:none;
-border-radius:8px;
+border-radius:10px;
 cursor:pointer;
 font-weight:600;
-background:#2563eb;
+background:#22c55e;
 color:white;
 }
 
-.stop{background:#dc2626}
+.stop{background:#ef4444}
+.youtube{background:#3b82f6}
+
+iframe{
+width:100%;
+height:180px;
+border-radius:12px;
+border:none;
+margin-top:10px;
+display:none;
+}
 </style>
 </head>
 
 <body>
 
+<div class="bg" id="bg"></div>
+
 <div class="app">
 
-<h2>CalmHz</h2>
+<h2>CalmHz Studio</h2>
 
 <div class="card">
-<label>תדר <span id="freqLabel">120Hz</span></label>
-<input id="freq" type="range" min="20" max="1000" value="120">
+סוג צליל
+<select id="type">
+<option value="sine">תדר סינוס</option>
+<option value="white">רעש לבן</option>
+<option value="pink">רעש ורוד</option>
+<option value="brown">רעש חום</option>
+</select>
 </div>
 
 <div class="card">
-🌧 גשם
-<input id="rain" type="range" min="0" max="100" value="20">
+תדר: <span id="freqVal">440Hz</span>
+<input id="freq" type="range" min="20" max="20000" value="440">
 </div>
 
 <div class="card">
-🌊 ים
-<input id="ocean" type="range" min="0" max="100" value="0">
+רקע
+<select onchange="setBg(this.value)">
+<option value="rain">גשם</option>
+<option value="ocean">ים</option>
+<option value="forest">יער</option>
+<option value="night">לילה</option>
+</select>
 </div>
 
 <div class="card">
-🌬 רוח
-<input id="wind" type="range" min="0" max="100" value="0">
-</div>
-
-<div class="card">
-🔊 עוצמה כללית
-<input id="master" type="range" min="0" max="100" value="70">
+מצבים מוכנים
+<select onchange="preset(this.value)">
+<option>בחר</option>
+<option value="focus">Focus</option>
+<option value="sleep">Sleep</option>
+<option value="rain">Rain</option>
+<option value="deep">Deep Noise</option>
+</select>
 </div>
 
 <div class="row">
 <button onclick="play()">נגן</button>
 <button class="stop" onclick="stop()">עצור</button>
+<button class="youtube" onclick="toggleYT()">YouTube</button>
 </div>
+
+<iframe id="yt"
+src="https://www.youtube.com/embed/5qap5aO4i9A"
+allow="autoplay">
+</iframe>
 
 </div>
 
 <script>
+let ctx,source;
 
-let ctx, masterGain, nodes=[]
+freq.oninput=()=>{
+freqVal.innerText=freq.value+"Hz";
+}
 
-freq.oninput=()=>freqLabel.innerText=freq.value+"Hz"
+function setBg(v){
+const bg=document.getElementById("bg");
 
-function pinkNoise(){
+if(v==="rain")
+bg.style.backgroundImage="url('https://images.unsplash.com/photo-1501696461415-6bd6660c6742')";
 
-const buffer=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate)
-const data=buffer.getChannelData(0)
+if(v==="ocean")
+bg.style.backgroundImage="url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e')";
 
-let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0
+if(v==="forest")
+bg.style.backgroundImage="url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e')";
+
+if(v==="night")
+bg.style.backgroundImage="url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee')";
+}
+
+function noise(type,len){
+const buffer=ctx.createBuffer(1,len,ctx.sampleRate);
+const data=buffer.getChannelData(0);
+
+let last=0;
 
 for(let i=0;i<data.length;i++){
-let white=Math.random()*2-1
-b0=0.99886*b0+white*0.0555179
-b1=0.99332*b1+white*0.0750759
-b2=0.96900*b2+white*0.1538520
-b3=0.86650*b3+white*0.3104856
-b4=0.55000*b4+white*0.5329522
-b5=-0.7616*b5-white*0.0168980
-data[i]=b0+b1+b2+b3+b4+b5+b6+white*0.5362
-data[i]*=0.11
-b6=white*0.115926
+
+let white=Math.random()*2-1;
+
+if(type==="white") data[i]=white;
+
+if(type==="pink"){
+data[i]=(white+last)/2;
+last=data[i];
 }
 
-return buffer
+if(type==="brown"){
+last=(last+(0.02*white))/1.02;
+data[i]=last;
 }
 
-function rainSound(level){
-
-const src=ctx.createBufferSource()
-src.buffer=pinkNoise()
-src.loop=true
-
-const hp=ctx.createBiquadFilter()
-hp.type="highpass"
-hp.frequency.value=600
-
-const gain=ctx.createGain()
-gain.gain.value=level
-
-src.connect(hp)
-hp.connect(gain)
-gain.connect(masterGain)
-
-src.start()
-nodes.push(src)
 }
 
-function oceanSound(level){
-
-const src=ctx.createBufferSource()
-src.buffer=pinkNoise()
-src.loop=true
-
-const lp=ctx.createBiquadFilter()
-lp.type="lowpass"
-lp.frequency.value=300
-
-const lfo=ctx.createOscillator()
-const lfoGain=ctx.createGain()
-
-lfo.frequency.value=0.12
-lfoGain.gain.value=200
-
-lfo.connect(lfoGain)
-lfoGain.connect(lp.frequency)
-lfo.start()
-
-const gain=ctx.createGain()
-gain.gain.value=level
-
-src.connect(lp)
-lp.connect(gain)
-gain.connect(masterGain)
-
-src.start()
-nodes.push(src)
-}
-
-function windSound(level){
-
-const src=ctx.createBufferSource()
-src.buffer=pinkNoise()
-src.loop=true
-
-const bp=ctx.createBiquadFilter()
-bp.type="bandpass"
-bp.frequency.value=800
-
-const gain=ctx.createGain()
-gain.gain.value=level
-
-src.connect(bp)
-bp.connect(gain)
-gain.connect(masterGain)
-
-src.start()
-nodes.push(src)
-}
-
-function tone(){
-
-const osc=ctx.createOscillator()
-osc.type="sine"
-osc.frequency.value=freq.value
-
-const gain=ctx.createGain()
-gain.gain.value=0.15
-
-osc.connect(gain)
-gain.connect(masterGain)
-
-osc.start()
-nodes.push(osc)
+return buffer;
 }
 
 function play(){
 
-stop()
+stop();
 
-ctx=new AudioContext()
+ctx=new AudioContext();
 
-masterGain=ctx.createGain()
-masterGain.gain.value=master.value/100
-masterGain.connect(ctx.destination)
+const type=document.getElementById("type").value;
 
-tone()
+if(type==="sine"){
+source=ctx.createOscillator();
+source.frequency.value=freq.value;
+source.connect(ctx.destination);
+source.start();
+return;
+}
 
-rainSound(rain.value/200)
-oceanSound(ocean.value/200)
-windSound(wind.value/200)
+const buffer=noise(type,ctx.sampleRate*5);
 
+source=ctx.createBufferSource();
+source.buffer=buffer;
+source.loop=true;
+source.connect(ctx.destination);
+source.start();
 }
 
 function stop(){
-
-nodes.forEach(n=>{
-try{n.stop()}catch{}
-})
-
-nodes=[]
+try{source.stop()}catch{}
 }
 
+function preset(p){
+
+if(p==="focus"){
+type.value="sine";
+freq.value=432;
+}
+
+if(p==="sleep"){
+type.value="brown";
+}
+
+if(p==="rain"){
+type.value="pink";
+}
+
+if(p==="deep"){
+type.value="white";
+freq.value=120;
+}
+
+freq.oninput();
+}
+
+function toggleYT(){
+const y=document.getElementById("yt");
+y.style.display=y.style.display==="none"?"block":"none";
+}
 </script>
 
 </body>
