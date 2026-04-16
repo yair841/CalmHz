@@ -1,269 +1,227 @@
+import os
+
+# Define the HTML content for the sleep-focused website
+html_content = """
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CalmHz Studio Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SottoDreams - חלומות שלווים</title>
     <style>
         :root {
-            --primary: #6366f1;
-            --secondary: #22c55e;
-            --danger: #ef4444;
-            --bg-dark: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
+            --bg-color: #0b0d17;
+            --card-bg: #161b22;
+            --accent-color: #7d5fff;
+            --text-color: #e6edf3;
+            --secondary-text: #8b949e;
         }
 
         body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--bg-dark);
-            color: white;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
+            padding: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
         }
 
-        .bg-overlay {
-            position: fixed;
-            inset: 0;
-            background-image: url('https://images.unsplash.com/photo-1501696461415-6bd6660c6742');
-            background-size: cover;
-            background-position: center;
-            filter: blur(20px) brightness(0.3);
-            transition: background-image 1.5s ease-in-out;
-            z-index: -1;
-        }
-
-        .app-container {
-            position: relative;
-            width: 90%;
-            max-width: 420px;
-            background: var(--card-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 30px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        h2 {
-            margin: 0 0 20px;
+        header {
+            background: linear-gradient(to bottom, #161b22, transparent);
+            padding: 40px 20px;
             text-align: center;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(to right, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
 
-        .control-group {
-            margin-bottom: 20px;
+        h1 {
+            color: var(--accent-color);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(125, 95, 255, 0.4);
         }
 
-        label {
-            display: block;
-            font-size: 0.85rem;
-            margin-bottom: 8px;
-            color: #94a3b8;
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
-        select, input[type="range"] {
-            width: 100%;
-            padding: 10px;
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        /* Video Section */
+        .video-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 40px;
+        }
+
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 */
+            height: 0;
+            overflow: hidden;
             border-radius: 12px;
-            color: white;
-            outline: none;
         }
 
-        .freq-display {
-            float: left;
-            color: var(--primary);
-            font-weight: bold;
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
 
-        .btn-grid {
+        /* Features Grid */
+        .features {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Breathing Tool */
+        .breathing-circle {
+            width: 100px;
+            height: 100px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            margin: 20px auto;
+            animation: breathe 8s infinite ease-in-out;
+            opacity: 0.6;
+            box-shadow: 0 0 20px var(--accent-color);
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.8); opacity: 0.7; }
+        }
+
+        /* Sleep Timer UI */
+        .timer-display {
+            font-size: 2rem;
+            color: var(--accent-color);
+            margin: 15px 0;
         }
 
         button {
-            padding: 12px;
+            background: var(--accent-color);
+            color: white;
             border: none;
-            border-radius: 14px;
+            padding: 10px 25px;
+            border-radius: 25px;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: opacity 0.2s;
         }
 
-        button:active { transform: scale(0.96); }
-
-        .btn-play { background: var(--primary); color: white; grid-column: span 2; }
-        .btn-stop { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
-        .btn-yt { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
-
-        #yt-container {
-            margin-top: 15px;
-            border-radius: 15px;
-            overflow: hidden;
-            display: none;
-            transition: 0.3s;
+        button:hover {
+            opacity: 0.8;
         }
 
-        input[type=range] {
-            accent-color: var(--primary);
-            cursor: pointer;
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: var(--secondary-text);
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
 
-<div class="bg-overlay" id="bgOverlay"></div>
+<header>
+    <h1>SottoDreams</h1>
+    <p>המקום שלך לשינה עמוקה ורוגע מוחלט</p>
+</header>
 
-<div class="app-container">
-    <h2>CalmHz Studio</h2>
+<div class="container">
+    
+    <section class="video-section">
+        <div class="video-wrapper">
+            <iframe src="https://www.youtube.com/embed/videoseries?list=PLux_S_9_G02Is_Wd7q1MshvXvN-iZ2-nO" 
+                    title="SottoDreams Video Player" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+            </iframe>
+        </div>
+        <div style="margin-top: 15px; text-align: center;">
+            <p>צפה בסרטונים האחרונים של SottoDreams להירדמות מהירה</p>
+        </div>
+    </section>
 
-    <div class="control-group">
-        <label>סוג צליל</label>
-        <select id="type">
-            <option value="sine">תדר סינוס (טהור)</option>
-            <option value="white">רעש לבן (White Noise)</option>
-            <option value="pink">רעש ורוד (Pink Noise)</option>
-            <option value="brown">רעש חום (Deep Brown)</option>
-        </select>
+    <div class="features">
+        <div class="feature-card">
+            <h3>תרגול נשימה</h3>
+            <p>עקוב אחרי העיגול: נשום פנימה כשהוא גדל, והוצא אוויר כשהוא קטן.</p>
+            <div class="breathing-circle"></div>
+        </div>
+
+        <div class="feature-card">
+            <h3>טיימר שינה</h3>
+            <p>הגדר זמן לכיבוי אוטומטי של הצלילים</p>
+            <div class="timer-display" id="timer">30:00</div>
+            <button onclick="startTimer()">הפעל טיימר</button>
+        </div>
     </div>
 
-    <div class="control-group">
-        <label>תדר <span class="freq-display" id="freqVal">440Hz</span></label>
-        <input id="freq" type="range" min="40" max="2000" value="440">
-    </div>
+    <section class="feature-card" style="margin-top: 20px;">
+        <h3>טיפ לשינה טובה</h3>
+        <p id="daily-tip">טוען טיפ מנצח...</p>
+    </section>
 
-    <div class="control-group">
-        <label>אווירה חזותית</label>
-        <select id="bgSelect" onchange="updateScene(this.value)">
-            <option value="https://images.unsplash.com/photo-1501696461415-6bd6660c6742">גשם רגוע</option>
-            <option value="https://images.unsplash.com/photo-1507525428034-b723cf961d3e">חוף הים</option>
-            <option value="https://images.unsplash.com/photo-1441974231531-c6227db76b6e">יער עמוק</option>
-            <option value="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee">לילה זרוע כוכבים</option>
-        </select>
-    </div>
-
-    <div class="btn-grid">
-        <button class="btn-play" onclick="initAudio()">נגן צליל</button>
-        <button class="btn-stop" onclick="stopAudio()">עצור</button>
-        <button class="btn-yt" onclick="toggleYT()">YouTube</button>
-    </div>
-
-    <div id="yt-container">
-        <iframe width="100%" height="180" src="https://www.youtube.com/embed/5qap5aO4i9A" frameborder="0" allow="autoplay"></iframe>
-    </div>
 </div>
 
+<footer>
+    <p>© 2024 SottoDreams Fan Site - עוצב עבור שינה רגועה</p>
+</footer>
+
 <script>
-    let audioCtx, oscillator, noiseSource, gainNode;
+    // Daily Sleep Tips
+    const tips = [
+        "שמרו על טמפרטורת חדר של כ-22 מעלות לשינה אופטימלית.",
+        "הימנעו ממסכים כ-30 דקות לפני השינה.",
+        "נסו ללכת לישון בשעה קבועה בכל לילה.",
+        "החשיכו את החדר לחלוטין כדי לעודד הפרשת מלטונין.",
+        "הימנעו מקפאין החל משעות הצהריים המוקדמות."
+    ];
+    
+    document.getElementById('daily-tip').innerText = tips[Math.floor(Math.random() * tips.length)];
 
-    const freqInput = document.getElementById('freq');
-    const freqVal = document.getElementById('freqVal');
-    const typeSelect = document.getElementById('type');
-
-    freqInput.oninput = () => {
-        freqVal.innerText = freqInput.value + "Hz";
-        if (oscillator) oscillator.frequency.setTargetAtTime(freqInput.value, audioCtx.currentTime, 0.1);
-    };
-
-    function updateScene(url) {
-        document.getElementById('bgOverlay').style.backgroundImage = `url('${url}')`;
-    }
-
-    function createPinkNoise(buffer) {
-        let b0, b1, b2, b3, b4, b5, b6;
-        b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < buffer.length; i++) {
-            let white = Math.random() * 2 - 1;
-            b0 = 0.99886 * b0 + white * 0.0555179;
-            b1 = 0.99332 * b1 + white * 0.0750759;
-            b2 = 0.96900 * b2 + white * 0.1538520;
-            b3 = 0.86650 * b3 + white * 0.3104856;
-            b4 = 0.55000 * b4 + white * 0.5329522;
-            b5 = -0.7616 * b5 - white * 0.0168980;
-            data[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-            data[i] *= 0.11; 
-            b6 = white * 0.115926;
-        }
-    }
-
-    function initAudio() {
-        if (audioCtx) stopAudio();
-        
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        gainNode = audioCtx.createGain();
-        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.1); // Fade in
-        
-        const type = typeSelect.value;
-
-        if (type === 'sine') {
-            oscillator = audioCtx.createOscillator();
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(freqInput.value, audioCtx.currentTime);
-            oscillator.connect(gainNode);
-            oscillator.start();
-        } else {
-            const bufferSize = audioCtx.sampleRate * 2;
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-
-            if (type === 'white') {
-                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-            } else if (type === 'pink') {
-                createPinkNoise(buffer);
-            } else if (type === 'brown') {
-                let lastOut = 0.0;
-                for (let i = 0; i < bufferSize; i++) {
-                    let white = Math.random() * 2 - 1;
-                    data[i] = (lastOut + (0.02 * white)) / 1.02;
-                    lastOut = data[i];
-                    data[i] *= 3.5; // הגברה לרעש חום
-                }
+    // Simple Timer Logic
+    let timeLeft = 1800; // 30 minutes
+    function startTimer() {
+        const timerElement = document.getElementById('timer');
+        const interval = setInterval(() => {
+            if (timeLeft <= 0) {
+                clearInterval(interval);
+                timerElement.innerText = "זמן לישון!";
+                alert("הטיימר הסתיים. לילה טוב!");
+            } else {
+                timeLeft--;
+                let mins = Math.floor(timeLeft / 60);
+                let secs = timeLeft % 60;
+                timerElement.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
             }
-
-            noiseSource = audioCtx.createBufferSource();
-            noiseSource.buffer = buffer;
-            noiseSource.loop = true;
-            noiseSource.connect(gainNode);
-            noiseSource.start();
-        }
-
-        gainNode.connect(audioCtx.destination);
-    }
-
-    function stopAudio() {
-        if (gainNode) {
-            gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1); // Fade out
-            setTimeout(() => {
-                if (oscillator) { oscillator.stop(); oscillator = null; }
-                if (noiseSource) { noiseSource.stop(); noiseSource = null; }
-                if (audioCtx) audioCtx.close();
-            }, 150);
-        }
-    }
-
-    function toggleYT() {
-        const container = document.getElementById('yt-container');
-        container.style.display = container.style.display === 'block' ? 'none' : 'block';
+        }, 1000);
     }
 </script>
 
 </body>
 </html>
+"""
+
+with open("sleep_site.html", "w", encoding="utf-8") as f:
+    f.write(html_content)
