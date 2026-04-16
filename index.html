@@ -1,234 +1,375 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SottoDreams | Pure Sleep Experience</title>
-    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@200;400;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #8e7dff;
-            --bg: #03050a;
-            --card: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.08);
-            --text: #e0e0e0;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SottoDreams | Ultimate Sleep Experience</title>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@200;400;700&display=swap" rel="stylesheet">
 
-        body {
-            font-family: 'Assistant', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
+<style>
+:root{
+--primary:#8e7dff;
+--bg:#03050a;
+--card:rgba(255,255,255,0.03);
+--border:rgba(255,255,255,0.08);
+--text:#e0e0e0;
+}
 
-        /* תפריט צד - רשימת סרטונים */
-        .sidebar {
-            width: 380px;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(20px);
-            border-left: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            overflow-y: auto;
-        }
+*{box-sizing:border-box}
 
-        .sidebar h2 {
-            font-weight: 200;
-            font-size: 1.8rem;
-            margin-bottom: 30px;
-            text-align: center;
-            color: var(--primary);
-        }
+body{
+margin:0;
+font-family:'Assistant',sans-serif;
+background:var(--bg);
+color:var(--text);
+display:flex;
+height:100vh;
+overflow:hidden;
+}
 
-        .video-thumb {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 15px;
-            padding: 10px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
+/* background video */
+.video-bg{
+position:fixed;
+inset:0;
+z-index:0;
+opacity:.35;
+filter:blur(90px) saturate(140%) brightness(.8);
+pointer-events:none;
+}
 
-        .video-thumb:hover {
-            background: var(--primary);
-            color: #000;
-            transform: scale(1.02);
-        }
+.video-bg iframe{
+width:120vw;
+height:120vh;
+transform:scale(1.4);
+}
 
-        .video-thumb img {
-            width: 100px;
-            border-radius: 10px;
-        }
+/* fog overlay */
+.fog{
+position:fixed;
+inset:0;
+z-index:1;
+pointer-events:none;
+background:
+radial-gradient(circle at 10% 20%, rgba(142,125,255,.18), transparent 40%),
+radial-gradient(circle at 80% 70%, rgba(142,125,255,.15), transparent 40%),
+radial-gradient(circle at 50% 50%, rgba(0,0,0,.4), transparent 70%);
+animation:fogMove 20s linear infinite;
+}
 
-        .video-thumb span {
-            font-size: 0.9rem;
-            font-weight: 400;
-        }
+@keyframes fogMove{
+0%{transform:translateY(0)}
+50%{transform:translateY(-20px)}
+100%{transform:translateY(0)}
+}
 
-        /* אזור ראשי */
-        .main-stage {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            background: radial-gradient(circle at top right, #111420 0%, #03050a 100%);
-        }
+.sidebar{
+width:360px;
+background:rgba(0,0,0,.45);
+backdrop-filter:blur(20px);
+border-left:1px solid var(--border);
+padding:20px;
+overflow-y:auto;
+z-index:2;
+}
 
-        .player-wrapper {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 40px;
-        }
+.sidebar h2{
+text-align:center;
+font-weight:200;
+color:var(--primary);
+margin-bottom:20px;
+}
 
-        .iframe-container {
-            width: 100%;
-            max-width: 900px;
-            aspect-ratio: 16/9;
-            box-shadow: 0 40px 100px rgba(0,0,0,0.8);
-            border-radius: 25px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-        }
+.video-thumb{
+display:flex;
+gap:12px;
+align-items:center;
+padding:10px;
+border-radius:15px;
+background:var(--card);
+border:1px solid var(--border);
+margin-bottom:10px;
+cursor:pointer;
+transition:.25s;
+}
 
-        /* אזור עצות וכלים */
-        .bottom-shelf {
-            height: 200px;
-            padding: 20px 40px;
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-        }
+.video-thumb:hover{
+transform:scale(1.03);
+background:rgba(142,125,255,.15);
+}
 
-        .tip-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+.video-thumb.active{
+background:var(--primary);
+color:black;
+}
 
-        .tip-box h4 { margin: 0 0 10px 0; color: var(--primary); }
+.video-thumb img{
+width:100px;
+border-radius:10px;
+}
 
-        .breathe-tool {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
+.main-stage{
+flex:1;
+display:flex;
+flex-direction:column;
+position:relative;
+z-index:2;
+}
 
-        .dot {
-            width: 40px;
-            height: 40px;
-            background: var(--primary);
-            border-radius: 50%;
-            animation: pulse 4s infinite ease-in-out;
-            box-shadow: 0 0 20px var(--primary);
-        }
+.player-wrapper{
+flex:1;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:40px;
+}
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.8); opacity: 1; }
-        }
-    </style>
+.iframe-container{
+width:100%;
+max-width:900px;
+aspect-ratio:16/9;
+border-radius:25px;
+overflow:hidden;
+border:1px solid var(--border);
+box-shadow:
+0 40px 100px rgba(0,0,0,.8),
+0 0 80px rgba(142,125,255,.25);
+transition:opacity .4s ease;
+}
+
+.controls{
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+justify-content:center;
+padding:10px 20px;
+}
+
+.btn{
+padding:8px 14px;
+border-radius:20px;
+border:1px solid var(--border);
+background:var(--card);
+color:var(--text);
+cursor:pointer;
+transition:.2s;
+}
+
+.btn:hover{
+background:rgba(142,125,255,.2);
+}
+
+.volume{
+width:120px;
+}
+
+.bottom-shelf{
+height:180px;
+padding:20px 40px;
+display:grid;
+grid-template-columns:2fr 1fr;
+gap:20px;
+background:linear-gradient(to top, rgba(0,0,0,.8), transparent);
+}
+
+.tip-box{
+background:var(--card);
+border:1px solid var(--border);
+border-radius:20px;
+padding:20px;
+}
+
+.breathe-tool{
+background:var(--card);
+border:1px solid var(--border);
+border-radius:20px;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+}
+
+.dot{
+width:40px;
+height:40px;
+background:var(--primary);
+border-radius:50%;
+animation:pulse 4s infinite ease-in-out;
+box-shadow:0 0 20px var(--primary);
+}
+
+@keyframes pulse{
+0%,100%{transform:scale(1);opacity:.5}
+50%{transform:scale(1.8);opacity:1}
+}
+
+@media(max-width:900px){
+body{flex-direction:column;height:auto;overflow:auto}
+.sidebar{width:100%;border-left:none;border-top:1px solid var(--border)}
+.bottom-shelf{grid-template-columns:1fr;height:auto}
+}
+</style>
 </head>
+
 <body>
 
-    <aside class="sidebar">
-        <h2>SottoDreams</h2>
-        
-        <div class="video-thumb" onclick="playVid('V7dYzufRpJA')">
-            <img src="https://img.youtube.com/vi/V7dYzufRpJA/mqdefault.jpg">
-            <span>פסנתר מרגיע לבוקר</span>
-        </div>
+<div class="video-bg">
+<iframe id="bg-video" src="https://www.youtube.com/embed/V7dYzufRpJA?autoplay=1&mute=1&controls=0&loop=1&playlist=V7dYzufRpJA"></iframe>
+</div>
+<div class="fog"></div>
 
-        <div class="video-thumb" onclick="playVid('cTVzFYEaidU')">
-            <img src="https://img.youtube.com/vi/cTVzFYEaidU/mqdefault.jpg">
-            <span>פסנתר וגשם עדין</span>
-        </div>
+<aside class="sidebar">
+<h2>SottoDreams</h2>
+<div id="video-list"></div>
+</aside>
 
-        <div class="video-thumb" onclick="playVid('R7Ywx3ZWLyY')">
-            <img src="https://img.youtube.com/vi/R7Ywx3ZWLyY/mqdefault.jpg">
-            <span>צלילי מים עמוקים</span>
-        </div>
+<main class="main-stage">
 
-        <div class="video-thumb" onclick="playVid('8eER1PAt23c')">
-            <img src="https://img.youtube.com/vi/8eER1PAt23c/mqdefault.jpg">
-            <span>מנגינת שלווה לשינה</span>
-        </div>
+<div class="player-wrapper">
+<div class="iframe-container" id="playerBox">
+<iframe id="main-player" width="100%" height="100%"
+src="https://www.youtube.com/embed/V7dYzufRpJA?autoplay=1"
+frameborder="0" allow="autoplay; encrypted-media" allowfullscreen>
+</iframe>
+</div>
+</div>
 
-        <div class="video-thumb" onclick="playVid('zJtJXMg3XBk')">
-            <img src="https://img.youtube.com/vi/zJtJXMg3XBk/mqdefault.jpg">
-            <span>פסנתר חלומי ללילה</span>
-        </div>
+<div class="controls">
+<button class="btn" onclick="shuffle()">Shuffle</button>
+<button class="btn" onclick="nextVideo()">Next</button>
+<button class="btn" onclick="prevVideo()">Prev</button>
+<button class="btn" onclick="timer(30)">Sleep 30m</button>
+<button class="btn" onclick="timer(60)">Sleep 60m</button>
+<button class="btn" onclick="toggleFullscreen()">Fullscreen</button>
+<button class="btn" onclick="toggleAmbient()">Ambient</button>
+<input type="range" min="0" max="100" value="100" class="volume" onchange="setVolume(this.value)">
+</div>
 
-        <div class="video-thumb" onclick="playVid('_v0L-WbuJoE')">
-            <img src="https://img.youtube.com/vi/_v0L-WbuJoE/mqdefault.jpg">
-            <span>רעש חום (Brown Noise)</span>
-        </div>
-    </aside>
+<div class="bottom-shelf">
+<div class="tip-box">
+<h4>טיפ לשינה</h4>
+<p id="tip-text">נשימות איטיות מורידות דופק ומרגיעות.</p>
+</div>
 
-    <main class="main-stage">
-        <div class="player-wrapper">
-            <div class="iframe-container">
-                <iframe id="main-player" width="100%" height="100%" 
-                    src="https://www.youtube.com/embed/V7dYzufRpJA?enablejsapi=1&autoplay=1" 
-                    frameborder="0" allow="autoplay; encrypted-media" allowfullscreen>
-                </iframe>
-            </div>
-        </div>
+<div class="breathe-tool">
+<div class="dot"></div>
+<span style="margin-top:10px;font-size:.8rem">נשימה מודעת</span>
+</div>
+</div>
 
-        <div class="bottom-shelf">
-            <div class="tip-box">
-                <h4>טיפ לשינה איכותית</h4>
-                <p id="tip-text">הידעת? חשיפה לאור יום בשעות הבוקר המוקדמות עוזרת לווסת את השעון הביולוגי לשינה טובה יותר בלילה.</p>
-            </div>
-            <div class="breathe-tool">
-                <div class="dot"></div>
-                <span style="margin-top: 10px; font-size: 0.8rem;">נשימה מודעת</span>
-            </div>
-        </div>
-    </main>
+</main>
 
-    <script>
-        // פונקציה להחלפת סרטון
-        function playVid(id) {
-            document.getElementById('main-player').src = `https://www.youtube.com/embed/${id}?autoplay=1`;
-        }
+<script>
 
-        // מערכת עצות מתחלפת
-        const tips = [
-            "הימנעו מצריכת קפאין לפחות 6 שעות לפני השינה.",
-            "נסו לשמור על טמפרטורה של 18-22 מעלות בחדר השינה.",
-            "שגרת 'ניתוק' ממסכים כ-30 דקות לפני השינה משפרת את איכות ה-REM.",
-            "כתיבת 'רשימת דאגות' לפני השינה עוזרת לנקות את המחשבות.",
-            "רעש חום (Brown Noise) הוכח כיעיל במיוחד להרגעת מחשבות רצות."
-        ];
+const videos=[
+{id:"V7dYzufRpJA",title:"Relax piano"},
+{id:"cTVzFYEaidU",title:"Piano rain"},
+{id:"R7Ywx3ZWLyY",title:"Water"},
+{id:"8eER1PAt23c",title:"Sleep melody"},
+{id:"zJtJXMg3XBk",title:"Dream piano"},
+{id:"_v0L-WbuJoE",title:"Brown noise"},
+{id:"M8WgjdB6nvk",title:"Relax"},
+{id:"mARUw-lXGxg",title:"Deep sleep"},
+{id:"pJOVUQVZM24",title:"Ambient"},
+{id:"MHx6iY_kuPs",title:"Rain"},
+{id:"l9Se0S7BjgM",title:"Night"},
+{id:"msYO9MVGwYs",title:"Ocean"}
+];
 
-        let tipIndex = 0;
-        setInterval(() => {
-            tipIndex = (tipIndex + 1) % tips.length;
-            document.getElementById('tip-text').style.opacity = 0;
-            setTimeout(() => {
-                document.getElementById('tip-text').innerText = tips[tipIndex];
-                document.getElementById('tip-text').style.opacity = 1;
-            }, 500);
-        }, 8000);
-    </script>
+let current=0;
+const list=document.getElementById("video-list");
+
+videos.forEach((v,i)=>{
+const el=document.createElement("div");
+el.className="video-thumb";
+el.innerHTML=`
+<img src="https://img.youtube.com/vi/${v.id}/mqdefault.jpg">
+<span>${v.title}</span>`;
+
+el.onclick=()=>playVid(i,el);
+list.appendChild(el);
+});
+
+function playVid(index,el){
+current=index;
+const id=videos[index].id;
+
+const iframe=document.getElementById("main-player");
+const bg=document.getElementById("bg-video");
+const box=document.getElementById("playerBox");
+
+box.style.opacity=0;
+
+setTimeout(()=>{
+iframe.src=`https://www.youtube.com/embed/${id}?autoplay=1`;
+bg.src=`https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}`;
+box.style.opacity=1;
+},300);
+
+localStorage.setItem("lastVideo",index);
+
+document.querySelectorAll(".video-thumb").forEach(v=>v.classList.remove("active"));
+if(el) el.classList.add("active");
+}
+
+function shuffle(){
+const r=Math.floor(Math.random()*videos.length);
+playVid(r);
+}
+
+function nextVideo(){
+current=(current+1)%videos.length;
+playVid(current);
+}
+
+function prevVideo(){
+current=(current-1+videos.length)%videos.length;
+playVid(current);
+}
+
+function timer(min){
+setTimeout(()=>{
+document.getElementById("main-player").src="";
+},min*60000);
+}
+
+function toggleFullscreen(){
+const el=document.documentElement;
+if(!document.fullscreenElement) el.requestFullscreen();
+else document.exitFullscreen();
+}
+
+function toggleAmbient(){
+document.querySelector(".sidebar").classList.toggle("hide");
+document.querySelector(".controls").classList.toggle("hide");
+}
+
+function setVolume(v){
+document.getElementById("main-player").style.opacity=.99;
+}
+
+const tips=[
+"כבה אורות חזקים שעה לפני שינה",
+"טמפרטורה קרירה משפרת הירדמות",
+"נשימות איטיות מרגיעות מערכת עצבים",
+"רעש לבן מסתיר רעשים חיצוניים",
+"הימנע ממסכים לפני שינה",
+"תאורה חמה עוזרת לגוף להירגע",
+"נשימת 4-7-8 מרגיעה מהר",
+"מוזיקה איטית מורידה דופק"
+];
+
+let i=0;
+setInterval(()=>{
+i=(i+1)%tips.length;
+document.getElementById("tip-text").innerText=tips[i];
+},8000);
+
+window.onload=()=>{
+const last=localStorage.getItem("lastVideo");
+if(last) playVid(parseInt(last));
+}
+
+</script>
+
 </body>
 </html>
